@@ -1,0 +1,163 @@
+import pandas as pd
+import csv
+from sklearn.linear_model import LinearRegression
+from sklearn.cross_validation import train_test_split
+import argparse
+from xml.etree import ElementTree
+import sys
+from sklearn.ensemble import RandomForestClassifier
+import warnings
+warnings.filterwarnings("ignore", category=DeprecationWarning)
+
+
+def linearRegr(train_data):
+    feature_cols = ['WC', 'WPS', 'Sixltr', 'Dic', 'Numerals', 'funct', 'pronoun', 'ppron', 'i', 'we', 'you', 'shehe', 'they', 'ipron', 'article', 'verb', 'auxverb', 'past', 'present', 'future', 'adverb', 'preps', 'conj', 'negate', 'quant', 'number', 'swear', 'social', 'family', 'friend', 'humans', 'affect', 'posemo', 'negemo', 'anx', 'anger', 'sad', 'cogmech', 'insight', 'cause', 'discrep', 'tentat', 'certain', 'inhib', 'incl', 'excl', 'percept', 'see', 'hear', 'feel', 'bio', 'body', 'health', 'sexual', 'ingest', 'relativ', 'motion', 'space', 'time', 'work', 'achieve', 'leisure', 'home', 'money', 'relig', 'death', 'assent', 'nonfl', 'filler', 'Period', 'Comma', 'Colon', 'SemiC', 'QMark', 'Exclam', 'Dash', 'Quote', 'Apostro', 'Parenth', 'OtherP', 'AllPct']
+    X = train_data[feature_cols]
+
+    y1 = train_data.ope
+    lm1 = LinearRegression()
+    lm1.fit(X, y1)
+    zip(feature_cols, lm1.coef_)
+    y2 = train_data.con
+    lm2 = LinearRegression()
+    lm2.fit(X, y2)
+    zip(feature_cols, lm2.coef_)
+    y3 = train_data.ext
+    lm3 = LinearRegression()
+    lm3.fit(X, y3)
+    zip(feature_cols, lm3.coef_)
+    y4 = train_data.agr
+    lm4 = LinearRegression()
+    lm4.fit(X, y4)
+    zip(feature_cols, lm4.coef_)
+    y5 = train_data.neu
+    lm5 = LinearRegression()
+    lm5.fit(X, y5)
+    zip(feature_cols, lm5.coef_)
+    lr = [lm1,lm2,lm3,lm4,lm5]
+    return lr
+
+
+def train_agen_traits(merged):
+
+    ageCat = 0
+    for i in range(len(merged)):
+        a=merged.iloc[i].age
+        if a <=24:
+            ageCat = 1
+        elif a >= 25 and a <=34:
+            ageCat = 2
+        elif a >= 35 and a <=49:
+            ageCat = 3
+        elif a >= 50 :
+            ageCat = 4
+        else: print ("invalid age group")
+        merged.loc[i,'age'] = ageCat
+
+    feature_cols = ['WC', 'WPS', 'Sixltr', 'Dic', 'Numerals', 'funct', 'pronoun', 'ppron', 'i', 'we', 'you', 'shehe', 'they', 'ipron', 'article', 'verb', 'auxverb', 'past', 'present', 'future', 'adverb', 'preps', 'conj', 'negate', 'quant', 'number', 'swear', 'social', 'family', 'friend', 'humans', 'affect', 'posemo', 'negemo', 'anx', 'anger', 'sad', 'cogmech', 'insight', 'cause', 'discrep', 'tentat', 'certain', 'inhib', 'incl', 'excl', 'percept', 'see', 'hear', 'feel', 'bio', 'body', 'health', 'sexual', 'ingest', 'relativ', 'motion', 'space', 'time', 'work', 'achieve', 'leisure', 'home', 'money', 'relig', 'death', 'assent', 'nonfl', 'filler', 'Period', 'Comma', 'Colon', 'SemiC', 'QMark', 'Exclam', 'Dash', 'Quote', 'Apostro', 'Parenth', 'OtherP', 'AllPct']
+    target_age = merged.age
+    train = merged[feature_cols]
+    target_gen = merged.gender
+
+    rf_age = RandomForestClassifier(n_estimators=100)
+    rf_gen = RandomForestClassifier(n_estimators=100)
+    rf_age.fit(train, target_age)
+    rf_gen.fit(train, target_gen)
+
+    l_obj = linearRegr(merged)
+
+    return rf_gen,rf_age,l_obj
+
+
+def parse_args(): 
+    parser = argparse.ArgumentParser(description="""Script takes full input path to 
+                         test directory, output directory and training directory""") 
+ 
+    parser.add_argument('-i', 
+                        "--test_dir", 
+                        type=str, 
+                        required=True, 
+                        help='Full path to input test directory containing profile and text dir') 
+ 
+    parser.add_argument('-o', "--output_dir", 
+                        type=str, 
+                        required=True, 
+                        help='The path to output directory') 
+ 
+ 
+    args = parser.parse_args()
+    return args
+    
+#PROGRAM START
+if len(sys.argv) < 2:
+    print "Invalid arguments!"
+    exit()
+
+args = parse_args()
+
+input_dir = args.test_dir
+output_dir = args.output_dir
+
+print(input_dir,output_dir)
+
+#Training data
+# read profile data into dataframe
+data1 = pd.read_csv("/data/training/profile/profile.csv", index_col=0)
+# read LIWC data into a DataFrame
+data2 = pd.read_csv('/data/training/LIWC.csv', index_col=1)
+merged = pd.merge(left=data1,right=data2, how='left',left_on='userid',right_on= 'userId')
+
+#test data preparation
+# read profile data into dataframe
+datatest1 = pd.read_csv(input_dir+'/profile/profile.csv', index_col=0)
+# read LIWC data into a DataFrame
+datatest2 = pd.read_csv(input_dir+'/LIWC.csv', index_col=1)
+
+merged_test = pd.merge(left=datatest1,right=datatest2, how='left',left_on='userid',right_on= 'userId')
+
+#Train the classifiers
+rf_gen,rf_age,l_obj = train_agen_traits(merged)
+#Test 
+feature_cols = ['WC', 'WPS', 'Sixltr', 'Dic', 'Numerals', 'funct', 'pronoun', 'ppron', 'i', 'we', 'you', 'shehe', 'they', 'ipron', 'article', 'verb', 'auxverb', 'past', 'present', 'future', 'adverb', 'preps', 'conj', 'negate', 'quant', 'number', 'swear', 'social', 'family', 'friend', 'humans', 'affect', 'posemo', 'negemo', 'anx', 'anger', 'sad', 'cogmech', 'insight', 'cause', 'discrep', 'tentat', 'certain', 'inhib', 'incl', 'excl', 'percept', 'see', 'hear', 'feel', 'bio', 'body', 'health', 'sexual', 'ingest', 'relativ', 'motion', 'space', 'time', 'work', 'achieve', 'leisure', 'home', 'money', 'relig', 'death', 'assent', 'nonfl', 'filler', 'Period', 'Comma', 'Colon', 'SemiC', 'QMark', 'Exclam', 'Dash', 'Quote', 'Apostro', 'Parenth', 'OtherP', 'AllPct']
+
+xtest = merged_test[feature_cols]
+xtest = xtest.copy()
+
+for i in range(len(merged_test)):
+    x = rf_age.predict(xtest.iloc[i])
+    y = rf_gen.predict(xtest.iloc[i])
+    if y==0:
+        gender_cat = "male"
+    else:
+        gender_cat = "female"
+
+    ageGroup = " "
+    if x <=24:
+        ageGroup = "xx to 24"
+    elif x >= 25 and x <=34:
+        ageGroup = "25 to 34"
+    elif x >= 35 and x <=49:
+        ageGroup = "35 to 49"
+    elif a >= 50 :
+        ageGroup = "50 to xx"
+
+    xo=l_obj[0].predict(xtest.iloc[i])
+    xc=l_obj[1].predict(xtest.iloc[i])
+    xe=l_obj[2].predict(xtest.iloc[i])
+    xa=l_obj[3].predict(xtest.iloc[i])
+    xn=l_obj[4].predict(xtest.iloc[i])
+
+    user = merged_test.iloc[i].userid
+    output_file = output_dir+user+".xml"
+    with open(output_file, "w") as out_f:
+        attrs = {"userId": user,
+                 "gender" : gender_cat,
+                 "age_group" : ageGroup,
+                 "extrovert" : str(round(xe,1)),
+                 "neurotic" : str(round(xn,1)),
+                 "agreeable" : str(round(xa,1)),
+                 "conscientious" : str(round(xc,1)),
+                 "open" : str(round(xo,1))
+                }
+        tree = ElementTree.Element('', attrs)
+        out_f.write(ElementTree.tostring(tree))
