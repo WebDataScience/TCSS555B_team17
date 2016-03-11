@@ -89,10 +89,10 @@ test_x = test_data
 print("Test_x and Test_y are ready")
 
 
-# pca = RandomizedPCA(n_components=2)
-# train_x.reshape(-1, 1)
-# train_x = pca.fit_transform(train_x)
-# test_x = pca.transform(test_x)
+pca = RandomizedPCA(n_components=2)
+train_x.reshape(-1, 1)
+train_x = pca.fit_transform(train_x)
+test_x = pca.transform(test_x)
 
 # print(train_x[:5])
 knn = KNeighborsClassifier(10)
