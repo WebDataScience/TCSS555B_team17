@@ -89,7 +89,7 @@ test_x = test_data
 print("Test_x and Test_y are ready")
 
 
-pca = RandomizedPCA(n_components=2)
+pca = RandomizedPCA(n_components=6)
 train_x.reshape(-1, 1)
 train_x = pca.fit_transform(train_x)
 test_x = pca.transform(test_x)
